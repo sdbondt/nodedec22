@@ -1,0 +1,6 @@
+require('dotenv').config()
+const connectToDB = require('./db/connectToDB')
+const resetDB = require("./db/resetDB")
+connectToDB(process.env.MONGO_URI)
+resetDB()
+console.log('Database got reset')

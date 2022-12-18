@@ -1,0 +1,32 @@
+[
+    {
+        "name": "sam",
+        "email": "sam@hotmail.com",
+        "password": "123TESTtest",
+        "role": "admin"
+    },
+    {
+        "name": "jan",
+        "email": "jan@hotmail.com",
+        "password": "123TESTtest"
+        
+    },
+    {
+        "name": "an",
+        "email": "an@hotmail.com",
+        "password": "123TESTtest"
+        
+    },
+    {
+        "name": "jo",
+        "email": "jo@hotmail.com",
+        "password": "123TESTtest"
+        
+    },
+    {
+        "name": "zzzz",
+        "email": "zzzz@hotmail.com",
+        "password": "123TESTtest"
+        
+    }
+]
