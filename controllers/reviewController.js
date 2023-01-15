@@ -1,21 +1,13 @@
 const asyncHandler = require('../errorhandlers/asyncHandler')
 const { StatusCodes } = require('http-status-codes')
-const { BAD_REQUEST, OK, CREATED}  = StatusCodes
-const CustomError = require('../errorhandlers/customError')
-const { validatePostReviewRequest, validatePatchReviewRequest, validateDeleteReviewRequest, validateGetReviewsRequest } = require('../validators/reviewValidator')
+const { OK, CREATED}  = StatusCodes
 const Review = require('../models/Review')
 
 // POST api/courses/:slug/reviews
 exports.createReview = asyncHandler(async (req, res) => {
     const { slug } = req.params
     const { comment, rating } = req.body
-    const course = await validatePostReviewRequest(req, comment, rating, slug)
-    const review = await Review.create({
-        comment,
-        rating,
-        course,
-        user: req.user
-    })
+    const review = await Review.createReview(slug, comment, rating, req.user.id)
     return res.status(CREATED).json({ review })
 })
 
@@ -23,40 +15,28 @@ exports.createReview = asyncHandler(async (req, res) => {
 exports.updateReview = asyncHandler(async (req, res) => {
     const { reviewId } = req.params
     const { rating, comment } = req.body
-    const review = await validatePatchReviewRequest(req, rating, comment, reviewId)
-    await review.save()
+    const review = await Review.updateReview(comment, rating, reviewId, req.user)
     res.status(OK).json({ review })
 })
 
 // DELETE api/reviews/:reviewId
 exports.deleteReview = asyncHandler(async (req, res) => {
     const { reviewId } = req.params
-    const review = await validateDeleteReviewRequest(req, reviewId)
-    await review.remove()
+    await Review.deleteReview(reviewId, req.user)
     res.status(OK).json({ msg: 'Review got deleted.'})
 })
 
 // GET api/reviews/:reviewId
 exports.getReview = asyncHandler(async (req, res) => {
     const { reviewId } = req.params
-    const review = await Review.findById(reviewId)
-    if (!review) {
-        throw new CustomError('No review found for your request.', BAD_REQUEST)
-    }
+    const review = await Review.getReview(reviewId)
     res.status(OK).json({ review })
 })
 
 // GET api/courses/:slug/reviews
 exports.getReviews = asyncHandler(async (req, res) => {
     const { slug } = req.params
-    let { direction, page, limit } = req.query
-    direction = direction === 'desc' ? '-' : ''
-    const sortBy = direction + 'createdAt'
-    page = page || 1
-    limit = limit || 20
-    skip = ( page -1) * limit
-    const course = await validateGetReviewsRequest(slug)
-    const reviews = await Review.find({ course: course.id }).sort(sortBy).skip(skip).limit(limit)
+    const { reviews, page, limit } = await Review.getReviews(req.query, slug)
     res.status(OK).json({
         reviews,
         page,

@@ -3,27 +3,21 @@ const { StatusCodes } = require('http-status-codes')
 const { OK, CREATED, BAD_REQUEST } = StatusCodes
 const CustomError = require('../errorhandlers/customError')
 const Discipline = require('../models/Discipline')
-const { validatePostDisciplineRequest, validatePatchDisciplineRequest } = require('../validators/disciplineValidator')
 
 // POST /api/disciplines
 exports.createDiscipline = asyncHandler(async (req, res) => {
     const { name } = req.body
-    await validatePostDisciplineRequest(name)
     const imageUrl = !req.file ? null: req.file.path ? req.file.path: null
-    const discipline = await Discipline.create({
-        name,
-        user: req.user,
-        imageUrl
-    })
-    return res.status(StatusCodes.OK).json({ discipline })
+    const discipline = await Discipline.createDiscipline(req.user.id, name, imageUrl)
+    return res.status(CREATED).json({ discipline })
 })
 
 // PATCH /api/disciplines/:slug
 exports.updateDiscipline = asyncHandler(async (req, res) => {
     const { name } = req.body
     const { slug } = req.params
-    const discipline = await validatePatchDisciplineRequest(req, slug, name)
-    await discipline.save()
+    const imageUrl = !req.file ? null: req.file.path ? req.file.path: null
+    const discipline = await Discipline.updateDiscipline(slug, name, imageUrl)
     res.status(OK).json({
         discipline
     })
@@ -32,12 +26,7 @@ exports.updateDiscipline = asyncHandler(async (req, res) => {
 // DELETE /api/disciplines/:slug
 exports.deleteDiscipline = asyncHandler(async (req, res) => {
     const { slug } = req.params
-    const discipline = await Discipline.findOne({ slug })
-    if (!discipline) {
-        throw new CustomError('No discipline exists with that id.', BAD_REQUEST)
-    }
-
-    await discipline.remove()
+    await Discipline.deleteDiscipline(slug)
     res.status(OK).json({
         msg: 'Discipline got deleted.'
     })

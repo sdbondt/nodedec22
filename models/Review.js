@@ -1,4 +1,7 @@
 const mongoose = require('mongoose')
+const CustomError = require('../errorhandlers/customError')
+const { StatusCodes } = require('http-status-codes')
+const { BAD_REQUEST, UNAUTHORIZED }  = StatusCodes
 const { Schema, model } = mongoose
 
 const ReviewSchema = new Schema({
@@ -33,6 +36,141 @@ const ReviewSchema = new Schema({
 },
     { timestamps: true }
 )
+
+ReviewSchema.statics.createReview = async function (courseSlug, comment, rating, userId) {
+    try {
+        if (!comment || !rating || !courseSlug) {
+            throw new CustomError('Your review must have a comment and rating and belong to a course.', BAD_REQUEST)
+        }
+    
+        if (comment.length > 2000) {
+            throw new CustomError('Your comment can\'t be longer than 2000 characters.', BAD_REQUEST)
+        }
+    
+        if (rating < 1 || rating > 10 || !Number.isInteger(rating)) {
+            throw new CustomError('Your rating must be a whole number from 1 to 10.', BAD_REQUEST)
+        }
+    
+        const course = await this.model('Course').findOne({ slug: courseSlug })
+        if (!course) {
+            throw new CustomError('Your review must belong to a course.', BAD_REQUEST)
+        }
+        const reviewExists = await this.findOne({
+            user: userId,
+            course: course.id
+        })
+    
+        if (reviewExists) {
+            throw new CustomError('You can only add one review per user.', BAD_REQUEST)
+        }
+        const review = await this.create({
+            comment,
+            rating,
+            course,
+            user: userId
+        })
+        return review
+    } catch (e) {
+        throw new CustomError(e.message, e.statusCode)
+    }
+}
+
+ReviewSchema.statics.updateReview = async function (comment, rating, reviewId, user) {
+    try {
+        if (!comment && !rating) {
+            throw new CustomError('Nothing to update.', BAD_REQUEST)
+        }
+    
+        if (comment && comment.length > 2000) {
+            throw new CustomError('Your comment can\'t be longer than 2000 characters.', BAD_REQUEST)
+        }
+    
+        if (rating && (rating < 1 || rating > 10 || !Number.isInteger(rating))) {
+            throw new CustomError('Your rating must be a whole number from 1 to 10.', BAD_REQUEST)
+        }
+    
+        if (!mongoose.isValidObjectId(reviewId)) {
+            throw new CustomError('No review found for your request.', BAD_REQUEST)
+        }
+        const review = await this.findById(reviewId)
+        if (!review) {
+            throw new CustomError('No review found for your request.', BAD_REQUEST)
+        }
+        
+        if (user.id !== review.user.id && user.role !== 'admin') {
+            throw new CustomError('You\'re not authorized to perform this action.', UNAUTHORIZED)
+        }
+    
+        if (comment) {
+            review.comment = comment
+        }
+    
+        if (rating) {
+            review.rating = rating
+        }
+        await review.save()
+        return review
+    } catch (e) {
+        throw new CustomError(e.message, e.statusCode)
+    }
+}
+
+ReviewSchema.statics.deleteReview = async function (reviewId, user) {
+    try {
+        if (!mongoose.isValidObjectId(reviewId)) {
+            throw new CustomError('No review found for your request.', BAD_REQUEST)
+        }
+        const review = await this.findById(reviewId)
+        if (!review) {
+            throw new CustomError('No review found for your request', BAD_REQUEST)
+        }
+        
+        if (user.id !== review.user.id && user.role !== 'admin') {
+            throw new CustomError('You\'re not authorized to perform this action.', UNAUTHORIZED)
+        }
+        await review.remove()
+    } catch (e) {
+        throw new CustomError(e.message, e.statusCode)
+    }
+}
+
+ReviewSchema.statics.getReview = async function (reviewId) {
+    try {
+        if (!mongoose.isValidObjectId(reviewId)) {
+            throw new CustomError('No review found for your request.', BAD_REQUEST)
+        }
+        const review = await this.findById(reviewId)
+        if (!review) {
+            throw new CustomError('No review found for your request', BAD_REQUEST)
+        }
+        return review
+    } catch (e) {
+        throw new CustomError(e.message, e.statusCode)
+    }  
+}
+
+ReviewSchema.statics.getReviews = async function (query, courseSlug) {
+    try {
+        let { direction, page, limit } = query
+        direction = direction === 'desc' ? '-' : ''
+        const sortBy = direction + 'createdAt'
+        page = page || 1
+        limit = limit || 20
+        skip = ( page -1) * limit
+        const course = await this.model('Course').findOne({ slug: courseSlug })
+        if (!course) {
+            throw new CustomError('You must give a valid course to search for its reviews.', BAD_REQUEST)
+        }
+        const reviews = await this.find({ course: course.id }).sort(sortBy).skip(skip).limit(limit)
+        return {
+            reviews,
+            page,
+            limit
+    }
+    } catch (e) {
+        throw new CustomError(e.message, e.statusCode)
+    }   
+}
 
 ReviewSchema.statics.setAverageCourseRating = async function (courseId) {
     const obj = await this.aggregate([
