@@ -73,17 +73,21 @@ const reviewOne = {
 }
 
 const setupDatabase = async () => {
-    await connectToDB(process.env.MONGO_TEST_URI)
-    await User.deleteMany({})
-    await Discipline.deleteMany({})
-    await Course.deleteMany({})
-    await Review.deleteMany({})
-    await User.create(userOne)
-    await User.create(userTwo)
-    await User.create(admin)
-    await Discipline.create(disciplineOne)
-    await Course.create(courseOne)
-    await Review.create(reviewOne)
+    try {
+        await connectToDB(process.env.MONGO_TEST_URI)
+        await User.deleteMany({})
+        await Discipline.deleteMany({})
+        await Course.deleteMany({})
+        await Review.deleteMany({})
+        await User.create(userOne)
+        await User.create(userTwo)
+        await User.create(admin)
+        await Discipline.create(disciplineOne)
+        await Course.create(courseOne)
+        await Review.create(reviewOne)
+    } catch (e) {
+        console.log(e)
+    } 
 }
 
 module.exports = {

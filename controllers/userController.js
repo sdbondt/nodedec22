@@ -8,9 +8,7 @@ const User = require('../models/User')
 exports.getUser = asyncHandler(async (req, res) => {
     const { userId } = req.params
     const user = await User.findById(userId)
-    if (!user) {
-        throw new CustomError('No user found for your request.', BAD_REQUEST)
-    }
+    if (!user) throw new CustomError('No user found for your request.', BAD_REQUEST)
     res.status(OK).json({
         user,
         reviews: user.reviews
@@ -21,7 +19,5 @@ exports.getUser = asyncHandler(async (req, res) => {
 // GET /api/users
 exports.getUsers = asyncHandler(async (req, res) => {
     const users = await User.find()
-    res.status(OK).json({
-        users
-    })
+    res.status(OK).json({ users })
 })

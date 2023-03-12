@@ -1,7 +1,7 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
 const User = require('../../models/User')
-const { setupDatabase, userOne, userOneID, adminID, userTwo } = require('../testData')
+const { setupDatabase, userOne, userOneID, adminID, userTwo, userTwoID } = require('../testData')
 const crypto = require('crypto')
 const Review = require('../../models/Review')
 
@@ -74,7 +74,21 @@ describe('authentication unit tests', () => {
     })
 
     it('can have reviews', async () => {
-        const user = await User.findOne({ email: userTwo.email })
+        const user = await User.findById(userTwoID)
         expect(user.reviews[0] instanceof Review).toBe(true)
+        expect(user.reviews.length).toBe(1)
+    })
+
+    it('removes all users reviews when user get\'s deleted', async () => {
+        const user = await User.findById(userTwoID)
+        await user.remove()
+        const reviews = await Review.find({ user: user.id })
+        expect(reviews.length).toBe(0)
+    })
+
+    it('removes all reviews when all users get deleted', async () => {
+        await User.deleteMany()
+        const reviews = await Review.find()
+        expect(reviews.length).toBe(0)
     })
 })

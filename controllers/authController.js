@@ -8,9 +8,7 @@ const { OK, CREATED } = StatusCodes
 exports.login = asyncHandler(async (req, res) => {
     const { email, password } = req.body
     const token = await User.loginUser(email, password)    
-    res.status(OK).json({
-        token           
-    })   
+    res.status(OK).json({ token })   
 })
 
 // POST /api/auth/signup
@@ -18,9 +16,7 @@ exports.signup = asyncHandler(async (req, res) => {
     const { name, email, confirmPassword, password } = req.body
     const imageUrl = !req.file ? null: req.file.path ? req.file.path: null
     const token = await User.createUser(email, name, password, confirmPassword, imageUrl)
-    res.status(CREATED).json({
-        token
-    })    
+    res.status(CREATED).json({ token })    
 })
 
 // POST /api/auth/forgot
@@ -35,9 +31,7 @@ exports.resetPassword = asyncHandler(async (req, res) => {
     const { token } = req.params
     const { password, confirmPassword } = req.body
     const jwtToken =  await User.resetPassword(token, password, confirmPassword)
-    res.status(OK).json({
-        token: jwtToken           
-    })
+    res.status(OK).json({ token: jwtToken })
 })
 
 // PATCH /api/auth/profile

@@ -36,10 +36,11 @@ exports.getReview = asyncHandler(async (req, res) => {
 // GET api/courses/:slug/reviews
 exports.getReviews = asyncHandler(async (req, res) => {
     const { slug } = req.params
-    const { reviews, page, limit } = await Review.getReviews(req.query, slug)
+    const { reviews, page, limit, course } = await Review.getReviews(req.query, slug)
     res.status(OK).json({
         reviews,
         page,
-        limit
+        limit,
+        course
     })
 })

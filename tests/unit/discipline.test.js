@@ -4,7 +4,7 @@ const Course = require('../../models/Course')
 require('../../models/Course')
 const Discipline = require('../../models/Discipline')
 const User = require('../../models/User')
-const { setupDatabase, adminID, disciplineOne } = require('../testData')
+const { setupDatabase, adminID, disciplineOne, disciplineOneID } = require('../testData')
 
 beforeEach(setupDatabase)
 afterEach(async () => {
@@ -38,5 +38,18 @@ describe('discipline unit tests', () => {
     it('belongs to a user', async () => {
         const discipline = await Discipline.findOne({ name: disciplineOne.name }).populate('user')
         expect(discipline.user instanceof User).toBe(true)
+    })
+
+    it('removes related courses when a discipline get\'s removed', async () => {
+        const discipline = await Discipline.findById(disciplineOneID)
+        await discipline.remove()
+        const courses = await Course.find({ discipline: discipline.id })
+        expect(courses.length).toBe(0)
+    })
+
+    it('removes all courses when all disciplines get removed', async () => {
+        await Discipline.deleteMany()
+        const courses = await Course.find()
+        expect(courses.length).toBe(0)
     })
 })

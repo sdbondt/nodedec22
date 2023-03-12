@@ -1,7 +1,6 @@
 const asyncHandler = require('../errorhandlers/asyncHandler')
 const { StatusCodes } = require('http-status-codes')
-const { BAD_REQUEST, OK, CREATED}  = StatusCodes
-const CustomError = require('../errorhandlers/customError')
+const { OK, CREATED}  = StatusCodes
 const Discipline = require('../models/Discipline')
 const Course = require('../models/Course')
 
@@ -32,10 +31,7 @@ exports.deleteCourse = asyncHandler(async (req, res) => {
 // GET api/courses/:slug
 exports.getCourse = asyncHandler(async (req, res) => {
     const { slug } = req.params
-    const course = await Course.findOne({ slug })
-    if (!course) {
-        throw new CustomError('No course found for your request.', BAD_REQUEST)
-    }
+    const course = await Course.getCourse(slug)
     res.status(OK).json({ course, reviews: course.reviews })
 })
 
@@ -43,19 +39,13 @@ exports.getCourse = asyncHandler(async (req, res) => {
 exports.getCourses = asyncHandler(async (req, res) => {
     const { disciplineSlug } = req.params
     if (disciplineSlug) {
-        const discipline = await Discipline.findOne({ slug: disciplineSlug })
-        if (!discipline) {
-            throw new CustomError('No discipline found for your request.', BAD_REQUEST)
-        }
-        res.status(OK).json({
-            courses: discipline.courses
-        })
-    } else {
-        const { courses, page, limit} = await Course.searchCourses(req.query)
-        res.status(OK).json({
-            courses,
-            page,
-            limit,
-        })
+        const discipline = await Discipline.getDiscipline(disciplineSlug)
+        res.status(OK).json({ courses: discipline.courses })
     } 
+    const { courses, page, limit} = await Course.searchCourses(req.query)
+    res.status(OK).json({
+        courses,
+        page,
+        limit,
+    })
 })

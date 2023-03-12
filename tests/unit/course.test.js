@@ -4,7 +4,7 @@ const Course = require('../../models/Course')
 const Discipline = require('../../models/Discipline')
 const Review = require('../../models/Review')
 const User = require('../../models/User')
-const { setupDatabase, adminID, disciplineOne, userOneID, courseOne } = require('../testData')
+const { setupDatabase, adminID, disciplineOne, userOneID, courseOne, courseOneID } = require('../testData')
 
 beforeEach(setupDatabase)
 afterEach(async () => {
@@ -50,5 +50,19 @@ describe('course unit tests', () => {
     it('can have reviews', async () => {
         const course = await Course.findOne({ name: courseOne.name })
         expect(course.reviews[0] instanceof Review).toBe(true)
+        expect(course.reviews.length).toBe(1)
+    })
+
+    it('removes all related reviews if course get\'s deleted', async () => {
+        const course = await Course.findById(courseOneID)
+        await course.remove()
+        const reviews = await Course.find({ course: course.id })
+        expect(reviews.length).toBe(0)
+    })
+
+    it('removes all reviews when all courses get deleted', async () => {
+        await Course.deleteMany()
+        const reviews = await Review.find()
+        expect(reviews.length).toBe(0)
     })
 })
